@@ -1,5 +1,8 @@
 package net.devk.kalah;
 
+/**
+ * Game Types
+ */
 public enum Gems {
 	THREE_GEMS(3), FOUR_GEMS(4), SIX_GEMS(6);
 

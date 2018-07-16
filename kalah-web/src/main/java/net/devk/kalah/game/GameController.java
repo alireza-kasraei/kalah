@@ -25,6 +25,11 @@ public class GameController {
 		this.gameService = gameService;
 	}
 
+	/**
+	 * create a {@link Game} and returns its
+	 * 
+	 * @return generated {@link Game}
+	 */
 	@PostMapping
 	public ResponseEntity<Game> createGame() {
 		String gameId = gameService.createGame();
@@ -32,15 +37,27 @@ public class GameController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(new Game(gameId, uri.toString()));
 	}
 
+	/**
+	 * move a pit with the given pitId for a game with the given gameId
+	 * 
+	 * @param gameId
+	 * @param pitId
+	 * @return {@link GameStatus} that contains status of the board
+	 */
 	@PutMapping(value = "/{gameId}/pits/{pitId}")
-	public ResponseEntity<Game> move(@PathVariable String gameId, @PathVariable int pitId) {
+	public ResponseEntity<GameStatus> move(@PathVariable String gameId, @PathVariable int pitId) {
 		Map<String, String> status = gameService.move(gameId, pitId);
 		URI uri = createURI(gameId);
-		return ResponseEntity.status(HttpStatus.CREATED).body(new GameStatus(gameId, uri.toString(), status));
+		return ResponseEntity.status(HttpStatus.OK).body(new GameStatus(gameId, uri.toString(), status));
 	}
 
+	/**
+	 * @param gameId
+	 * @return location of a game with the given game id
+	 */
 	private URI createURI(String gameId) {
-		ServletUriComponentsBuilder builder = ServletUriComponentsBuilder.fromCurrentRequestUri();
+		ServletUriComponentsBuilder builder = ServletUriComponentsBuilder.fromCurrentContextPath();
+		builder.path("/games");
 		builder.pathSegment(gameId);
 		return builder.build().toUri();
 	}

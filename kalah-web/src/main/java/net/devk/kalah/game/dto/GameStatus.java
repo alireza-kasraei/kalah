@@ -4,10 +4,11 @@ import java.util.Map;
 
 public class GameStatus extends Game {
 
+	//this have to be unmodifiable too
 	private final Map<String, String> status;
 
-	public GameStatus(String gameId, String url, Map<String, String> status) {
-		super(gameId, url);
+	public GameStatus(String id, String uri, Map<String, String> status) {
+		super(id, uri);
 		this.status = status;
 	}
 

@@ -10,21 +10,21 @@ import java.util.Arrays;
 public class KalahGame {
 
 	// fixes locations of Kalah storage for two players
-	private static final int OPPOSITE_FIT_INDEX_COUNT = 7;
+	private static final int OPPOSITE_PIT_INDEX_COUNT = 7;
 	private static final int PLAYER_ONE_KALAH_INDEX = 6;
 	private static final int PLAYER_TWO_KALAH_INDEX = 13;
 
 	// fixed size of game board with two kalah(s)
-	private int[] fits = new int[14];
+	private int[] pits = new int[14];
 
 	private Player turn;
 	private GameStatus gameStatus;
 
 	public KalahGame(Gems gems) {
 		// initializing board
-		for (int i = 0; i < fits.length; i++) {
-			if (((i + 1) % OPPOSITE_FIT_INDEX_COUNT) != 0) {
-				fits[i] = gems.getCount();
+		for (int i = 0; i < pits.length; i++) {
+			if (((i + 1) % OPPOSITE_PIT_INDEX_COUNT) != 0) {
+				pits[i] = gems.getCount();
 			}
 		}
 		// it seems that there is no difference who starts the game
@@ -36,8 +36,8 @@ public class KalahGame {
 		this(Gems.FOUR_GEMS);
 	}
 
-	public int[] getFitsStatus() {
-		return fits;
+	public int[] getPitsStatus() {
+		return pits;
 	}
 
 	public GameStatus getGameStatus() {
@@ -54,80 +54,76 @@ public class KalahGame {
 	 */
 	public int getPlayerKalahValue(Player player) {
 		if (player == Player.PLAYER_ONE)
-			return fits[PLAYER_ONE_KALAH_INDEX];
+			return pits[PLAYER_ONE_KALAH_INDEX];
 		else
-			return fits[PLAYER_TWO_KALAH_INDEX];
+			return pits[PLAYER_TWO_KALAH_INDEX];
 	}
 
-	public int[] getPlayerFits(Player player) {
+	public int[] getPlayerPits(Player player) {
 		if (player == Player.PLAYER_ONE) {
-			return Arrays.copyOfRange(fits, 0, PLAYER_ONE_KALAH_INDEX - 1);
+			return Arrays.copyOfRange(pits, 0, PLAYER_ONE_KALAH_INDEX - 1);
 		} else
-			return Arrays.copyOfRange(fits, PLAYER_ONE_KALAH_INDEX + 1, PLAYER_TWO_KALAH_INDEX - 1);
+			return Arrays.copyOfRange(pits, PLAYER_ONE_KALAH_INDEX + 1, PLAYER_TWO_KALAH_INDEX - 1);
 	}
 
 	public int getPlayerGemsCountOnBourd(Player player) {
 		int sum = 0;
 		if (player == Player.PLAYER_ONE) {
 			for (int i = 0; i <= PLAYER_ONE_KALAH_INDEX - 1; i++) {
-				sum += fits[i];
+				sum += pits[i];
 			}
 		} else {
 			for (int i = PLAYER_ONE_KALAH_INDEX + 1; i <= PLAYER_TWO_KALAH_INDEX - 1; i++) {
-				sum += fits[i];
+				sum += pits[i];
 			}
 		}
 		return sum;
 	}
 
-	// fit numbers start with zero
-	// TODO change RuntimeException with meaningful one
-	public void play(Player player, int fitNumber) {
+	// pitIndex start with zero
+	public void play(int pitIndex) {
 		// check to see if game is running or finished
 		if (gameStatus != GameStatus.PENDING) {
-			throw new RuntimeException(String.format("the game is over , status is %s", gameStatus.name()));
+			throw new IllegalPlayException(String.format("the game is over , status is %s", gameStatus.name()));
 		}
-		// turn validation
-		if (turn != player)
-			throw new IllegalTurnException();
-		// fit number validation for the given user
-		if ((turn == Player.PLAYER_ONE) && ((fitNumber < 0) || (fitNumber > PLAYER_ONE_KALAH_INDEX - 1)))
-			throw new IllegalPlayException(String.format("Illegal play for player one with fit number %d", fitNumber));
+		// pit index validation for the given user
+		if ((turn == Player.PLAYER_ONE) && ((pitIndex < 0) || (pitIndex >= PLAYER_ONE_KALAH_INDEX)))
+			throw new IllegalPlayException(String.format("Illegal play for player one with pit index %d", pitIndex));
 
 		if ((turn == Player.PLAYER_TWO)
-				&& ((fitNumber < PLAYER_ONE_KALAH_INDEX + 1) || (fitNumber > PLAYER_TWO_KALAH_INDEX - 1)))
-			throw new IllegalPlayException(String.format("Illegal play for player two with fit number %d", fitNumber));
+				&& ((pitIndex <= PLAYER_ONE_KALAH_INDEX) || (pitIndex >= PLAYER_TWO_KALAH_INDEX)))
+			throw new IllegalPlayException(String.format("Illegal play for player two with pit index %d", pitIndex));
 		// no gems to play
-		if (fits[fitNumber] == 0)
-			throw new IllegalPlayException(String.format("fit with number %d does not have any gems.", fitNumber));
+		if (pits[pitIndex] == 0)
+			throw new IllegalPlayException(String.format("pit with index %d does not have any gems.", pitIndex));
 
-		final int gemCount = fits[fitNumber];
-		// drain the fit and play with its gems
-		fits[fitNumber] = 0;
+		final int gemCount = pits[pitIndex];
+		// drain the pit and play with its gems
+		pits[pitIndex] = 0;
 		// player must skip the oponent's kalah
 		int skipIndex = turn == Player.PLAYER_ONE ? PLAYER_TWO_KALAH_INDEX : PLAYER_ONE_KALAH_INDEX;
-		// we need the index of last fit for applying game rules
+		// we need the index of last pit for applying game rules
 		int lastIndex = 0;
-		// drop each gem on next fits
+		// drop each gem on next pits
 		for (int i = 1; i <= gemCount; i++) {
 			// we have to call fixIndex whenever index is incremented
-			int index = fixIndex(fitNumber + i);
-			if (fits[index] == skipIndex) {
+			int index = fixIndex(pitIndex + i);
+			if (pits[index] == skipIndex) {
 				index = fixIndex(index += 1);
 			}
-			// put gem in the fit
-			fits[index]++;
+			// put gem in the pit
+			pits[index]++;
 			lastIndex = index;
 		}
 		// applying game rules
 
 		switch (turn) {
 		case PLAYER_ONE: {
-			// empty fit rule
-			if (lastIndex < PLAYER_ONE_KALAH_INDEX && fits[lastIndex] == 1) {
-				fits[PLAYER_ONE_KALAH_INDEX] += (fits[lastIndex + OPPOSITE_FIT_INDEX_COUNT] + 1);
-				fits[lastIndex] = 0;
-				fits[lastIndex + OPPOSITE_FIT_INDEX_COUNT] = 0;
+			// empty pit rule
+			if (lastIndex < PLAYER_ONE_KALAH_INDEX && pits[lastIndex] == 1) {
+				pits[PLAYER_ONE_KALAH_INDEX] += (pits[lastIndex + OPPOSITE_PIT_INDEX_COUNT] + 1);
+				pits[lastIndex] = 0;
+				pits[lastIndex + OPPOSITE_PIT_INDEX_COUNT] = 0;
 				// avoids additional below check
 				turn = Player.PLAYER_TWO;
 				break;
@@ -141,10 +137,10 @@ public class KalahGame {
 			break;
 		}
 		case PLAYER_TWO: {
-			if ((lastIndex > PLAYER_ONE_KALAH_INDEX) && (lastIndex < PLAYER_TWO_KALAH_INDEX) && fits[lastIndex] == 1) {
-				fits[PLAYER_TWO_KALAH_INDEX] += (fits[lastIndex - OPPOSITE_FIT_INDEX_COUNT] + 1);
-				fits[lastIndex] = 0;
-				fits[lastIndex - OPPOSITE_FIT_INDEX_COUNT] = 0;
+			if ((lastIndex > PLAYER_ONE_KALAH_INDEX) && (lastIndex < PLAYER_TWO_KALAH_INDEX) && pits[lastIndex] == 1) {
+				pits[PLAYER_TWO_KALAH_INDEX] += (pits[lastIndex - OPPOSITE_PIT_INDEX_COUNT] + 1);
+				pits[lastIndex] = 0;
+				pits[lastIndex - OPPOSITE_PIT_INDEX_COUNT] = 0;
 				// avoids additional below check
 				turn = Player.PLAYER_ONE;
 				break;
@@ -165,18 +161,18 @@ public class KalahGame {
 
 	/**
 	 * @param index
-	 * @return fixed position of index on fits array
+	 * @return fixed position of index on pits array
 	 */
 	private int fixIndex(int index) {
-		if (index > fits.length - 1)
-			return index %= fits.length;
+		if (index > pits.length - 1)
+			return index %= pits.length;
 		else
 			return index;
 	}
 
 	/**
 	 * checks to see if the game is over and sets the winner , the game is over
-	 * while all fits for each player is empty
+	 * while all pits for each player is empty
 	 */
 	private void checkGameStatus() {
 
@@ -184,10 +180,10 @@ public class KalahGame {
 		int playerTwoGemsOnBoard = getPlayerGemsCountOnBourd(Player.PLAYER_TWO);
 
 		if (playerOneGemsOnBoard == 0) {
-			fits[PLAYER_TWO_KALAH_INDEX] += playerTwoGemsOnBoard;
+			pits[PLAYER_TWO_KALAH_INDEX] += playerTwoGemsOnBoard;
 			setGameResultStatus();
 		} else if (playerTwoGemsOnBoard == 0) {
-			fits[PLAYER_ONE_KALAH_INDEX] += playerOneGemsOnBoard;
+			pits[PLAYER_ONE_KALAH_INDEX] += playerOneGemsOnBoard;
 			setGameResultStatus();
 		}
 
@@ -198,13 +194,13 @@ public class KalahGame {
 	 * winner
 	 */
 	private void setGameResultStatus() {
-		if (fits[PLAYER_ONE_KALAH_INDEX] > fits[PLAYER_TWO_KALAH_INDEX]) {
+		if (pits[PLAYER_ONE_KALAH_INDEX] > pits[PLAYER_TWO_KALAH_INDEX]) {
 			gameStatus = GameStatus.PLAYER_ONE_WON;
 		}
-		if (fits[PLAYER_ONE_KALAH_INDEX] == fits[PLAYER_TWO_KALAH_INDEX]) {
+		if (pits[PLAYER_ONE_KALAH_INDEX] == pits[PLAYER_TWO_KALAH_INDEX]) {
 			gameStatus = GameStatus.EQUAL;
 		}
-		if (fits[PLAYER_ONE_KALAH_INDEX] < fits[PLAYER_TWO_KALAH_INDEX]) {
+		if (pits[PLAYER_ONE_KALAH_INDEX] < pits[PLAYER_TWO_KALAH_INDEX]) {
 			gameStatus = GameStatus.PLAYER_TWO_WON;
 		}
 
