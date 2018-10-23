@@ -10,6 +10,7 @@
 
 	<properties>
 		<java.version>1.7</java.version>
+		<sample.version>abc</sample.version>
 	</properties>
 
 	<modules>
